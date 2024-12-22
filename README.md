@@ -14,4 +14,4 @@ For pressure, we use an approximation: $P(x) = P_m (\rho(x) - \rho_0)$, where $P
 
 From this we can compute the acceleration due to pressure force:
 
-$$a(x) = \frac{1}{\rho(x)} \sum_i P_i \frac{m}{\rho_i} \nabla W(\|x - x_i\|)$$
+$$a(x) = \frac{1}{\rho(x)} \sum_i P_i \frac{m_i}{\rho_i} \nabla W(\|x - x_i\|)$$
