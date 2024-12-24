@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::color;
 use crate::consts::*;
 use crate::consts_private::*;
-use crate::kernel;
+use crate::kernel::{self, Kernel};
 use crate::physics;
 use crate::random;
 
@@ -30,17 +30,18 @@ pub fn spawn(
     let circle = meshes.add(Circle::new(PARTICLE_SCREEN_RADIUS));
 
     for _ in 0..NUM_PARTICLES {
-        let (x, y) = random::point_in_box(BOX_HALF_SIZE);
+        let (x, y) = random::point_in_box(PHYSICAL_HALF_SIZE);
         let v = random::vec_within_disk(PARTICLE_MAX_INITIAL_V);
+        println!("Initial v: {}", v);
         commands.spawn((
             // Animation properties.
             Mesh2d(circle.clone()),
             MeshMaterial2d(materials.add(color::for_velocity(v.length()))),
-            Transform::from_xyz(x, y, 1.0),
+            Transform::from_xyz(x * SCREEN_FACTOR, y * SCREEN_FACTOR, 1.0),
             // Physical properties.
             ParticleDensity(0.0),
             ParticlePressure(0.0),
-            ParticlePosition(Vec2 {x, y} / SCREEN_FACTOR),
+            ParticlePosition(Vec2 {x, y}),
             ParticleVelocity(v),
             ParticleAcceleration(Vec2::ZERO),
         ));
@@ -59,14 +60,24 @@ pub fn update_densities_and_pressures(
     ) in &mut densities {
         // Get the position of that particle.
         let ParticlePosition(sample_point) = positions.get(entity).unwrap();
+        // Start with the density at the edge of the container.
+        let mut sum = physics::compute_edge_density(sample_point);
         // Sum the density contributions of all particles on that position.
-        let mut sum = 0.0;
         for ParticlePosition(pos) in positions.iter() {
-            sum += kernel::compute(sample_point - pos);
+            if std::ptr::addr_eq(sample_point, pos) {
+                continue;
+            }
+            let displacement_squared = (sample_point - pos).length_squared();
+            sum += match DENSITY_KERNEL {
+                Kernel::Smooth6 => kernel::smooth6(displacement_squared),
+                Kernel::Spiky2 => kernel::spiky2(displacement_squared),
+            }
         }
-        // Update density and pressure.
-        density.0 = sum;
+        // Finally, add the density contribution of the particle itself.
+        density.0 = sum + DENSITY_FACTOR;
         pressure.0 = physics::density_to_pressure(density.0);
+        println!("Density: {}", density.0);
+        println!("Pressure: {}", pressure.0);
     }
 }
 
@@ -82,6 +93,12 @@ pub fn update_accelerations(
             _,
             ParticleDensity(density_x),
         ) = particles.get(entity).unwrap();
+        // If the only density contribution is from this particle, skip it.
+        if (*density_x - DENSITY_FACTOR).abs() < std::f32::EPSILON {
+            acceleration.0 = Vec2::ZERO;
+            acceleration.0.y -= GRAVITY_FORCE;
+            continue;
+        }
         // Sum the acceleration contributions of all particles on that position.
         let mut acc = Vec2::ZERO;
         for (
@@ -89,11 +106,18 @@ pub fn update_accelerations(
             ParticlePressure(pressure_i),
             ParticleDensity(density_i),
         ) in particles.iter() {
-            acc += pressure_i * kernel::gradient(pos_x - pos_i) / density_i;
+            if std::ptr::addr_eq(pos_x, pos_i) {
+                continue;
+            }
+
+            acc += pressure_i * kernel::grad_spiky2(pos_x - pos_i) / density_i;
         }
+        // Add edge pressure force.
+        acc += physics::compute_edge_acceleration(&pos_x, *density_x);
         // Update acceleration.
-        acceleration.0 = acc / density_x;
+        acceleration.0 = acc;
         acceleration.0.y -= GRAVITY_FORCE;
+        println!("Acc: {}", acceleration.0);
     }
 }
 
@@ -113,7 +137,11 @@ pub fn update_positions(
     time: Res<Time>,
     mut particles: Query<(&mut Transform, &mut ParticlePosition, &mut ParticleVelocity)>,
 ) {
-    for (mut transform, mut position, mut velocity) in &mut particles {
+    for (
+        mut transform,
+        mut position,
+        mut velocity
+    ) in &mut particles {
         // Integrate particle velocity.
         physics::integrate_velocity(
             &mut position.0.x,
@@ -131,6 +159,7 @@ pub fn update_positions(
             PARTICLE_CENTRE_BOUND.1,
             COLLISION_DAMPING,
         );
+        println!("Pos: {}", position.0);
         // Propagate position changes to transform to update animation.
         transform.translation.x = position.0.x * SCREEN_FACTOR;
         transform.translation.y = position.0.y * SCREEN_FACTOR;
@@ -145,7 +174,10 @@ pub fn update_velocities(
         ParticleAcceleration(acceleration),
         mut velocity,
     ) in &mut particles {
+        println!("Vel before: {}", velocity.0);
+        velocity.0 *= 0.95;
         velocity.0 += time.delta_secs() * acceleration;
+        println!("Vel after: {}", velocity.0);
     }
 }
 

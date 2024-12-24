@@ -3,9 +3,11 @@ use glam::f32::Vec2;
 
 use crate::const_color_u8;
 use crate::consts::{PARTICLE_MAX_INITIAL_V, TARGET_DENSITY};
+use crate::consts_private::DENSITY_FACTOR;
 use crate::kernel;
 use crate::maths::*;
 use crate::particle::ParticlePosition;
+use crate::physics;
 
 // Background colors.
 const COLOR_LOW_PRESSURE: Srgba = bevy::color::palettes::basic::BLUE;
@@ -20,7 +22,7 @@ const PARTICLE_COLOR_FAST: (f32, f32, f32) = const_color_u8!(214, 32, 32);
 // That is with influence from 0 particles to influence from up to N particles.
 const N: f32 = 5.0;
 const MARGIN: f32 = 0.05;
-const DENSITY_UPPER_BOUND: f32 = N * kernel::MAX_VAL;
+const DENSITY_UPPER_BOUND: f32 = N * DENSITY_FACTOR;
 const MARGIN_LOWER_BOUND: f32 = TARGET_DENSITY * (1.0 - MARGIN);
 const MARGIN_UPPER_BOUND: f32 =
     TARGET_DENSITY + (DENSITY_UPPER_BOUND - TARGET_DENSITY) * MARGIN;
@@ -33,9 +35,10 @@ pub fn for_density<'a>(
     particles: impl Iterator<Item = &'a ParticlePosition>,
 ) -> Color {
     // Compute the density at this point.
-    let mut density = 0.0;
+    let mut density = physics::compute_edge_density(&sample_point);
     for ParticlePosition(pos_i) in particles {
-        density += kernel::compute(sample_point - pos_i);
+        let displacement_squared = (sample_point - pos_i).length_squared();
+        density += kernel::spiky2(displacement_squared);
     }
     // Color point relative to target density.
     if density < MARGIN_LOWER_BOUND {

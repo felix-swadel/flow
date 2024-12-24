@@ -13,10 +13,8 @@ pub fn vec_within_disk(max_radius: f32) -> Vec2 {
     let mut rng = rand::thread_rng();
     let v_mag: f32 = rng.gen_range(0.0..max_radius);
     let z: f32 = rng.gen_range(0.0..std::f32::consts::TAU);
-    let v_x = v_mag * f32::cos(z);
-    let v_y = v_mag * f32::sin(z);
     Vec2{
-        x: v_x,
-        y: v_y,
-    }
+        x: f32::cos(z),
+        y: f32::sin(z),
+    } * v_mag
 }

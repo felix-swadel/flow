@@ -22,7 +22,7 @@ use bevy::{
             TextureFormat,
             TextureUsages,
         }
-    }
+    },
 };
 
 use background::Background;
@@ -45,9 +45,9 @@ fn main() {
         .add_systems(Update, (
             (
                 particle::update_densities_and_pressures,
+                particle::update_accelerations,
                 particle::update_positions,
                 particle::update_velocities,
-                particle::update_accelerations,
                 particle::update_colors,
                 background::update,
             ).chain(),

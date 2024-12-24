@@ -1,7 +1,8 @@
 // Contains constants computed from other constants
 // which aren't relevant to the user.
 
-use crate::consts::*;
+use crate::{consts::*, kernel::{SMOOTH6_FACTOR, SPIKY2_FACTOR}};
+use crate::kernel::Kernel;
 
 // Window size constants.
 pub const WINDOW_SIZE_F: (f32, f32) = (
@@ -29,3 +30,8 @@ pub const IMAGE_SIZE: (u32, u32) = (
 // We scale down the screen space by a factor of 100
 // to get nicer numbers for computing physical properties.
 pub const SCREEN_FACTOR: f32 = 100.0;
+
+pub const DENSITY_FACTOR: f32 = match DENSITY_KERNEL {
+    Kernel::Smooth6 => SMOOTH6_FACTOR,
+    Kernel::Spiky2 => SPIKY2_FACTOR,
+};
