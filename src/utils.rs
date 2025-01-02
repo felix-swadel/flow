@@ -6,12 +6,13 @@ macro_rules! u8_to_f32 {
 }
 
 #[macro_export]
-macro_rules! const_color_u8 {
+macro_rules! const_srgba_u8 {
     ($r:literal, $g:literal, $b:literal) => {
-        (
-            crate::u8_to_f32!($r),
-            crate::u8_to_f32!($g),
-            crate::u8_to_f32!($b),
-        )
+        Srgba {
+            red: crate::u8_to_f32!($r),
+            green: crate::u8_to_f32!($g),
+            blue: crate::u8_to_f32!($b),
+            alpha: 1.0,
+        }
     };
 }

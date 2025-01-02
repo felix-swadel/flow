@@ -1,7 +1,7 @@
 use bevy::prelude::{Color, Srgba};
 use glam::f32::Vec2;
 
-use crate::const_color_u8;
+use crate::const_srgba_u8;
 use crate::consts::{EDGE_REPULSION, TARGET_DENSITY};
 use crate::consts_private::DENSITY_FACTOR;
 use crate::kernel;
@@ -15,8 +15,8 @@ const COLOR_TARGET_PRESSURE: Srgba = bevy::color::palettes::basic::WHITE;
 const COLOR_HIGH_PRESSURE: Srgba = bevy::color::palettes::basic::RED;
 
 // Particle colors.
-const PARTICLE_COLOR_SLOW: (f32, f32, f32) = const_color_u8!(32, 166, 214);
-const PARTICLE_COLOR_FAST: (f32, f32, f32) = const_color_u8!(214, 32, 32);
+const PARTICLE_COLOR_SLOW: Srgba = const_srgba_u8!(32, 166, 214);
+const PARTICLE_COLOR_FAST: Srgba = const_srgba_u8!(214, 32, 32);
 
 // We assume that densities range in [0, N * kernel::MAX_VAL].
 // That is with influence from 0 particles to influence from up to N particles.
@@ -24,11 +24,11 @@ const N: f32 = 5.0;
 const MARGIN: f32 = 0.05;
 const DENSITY_UPPER_BOUND: f32 = N * DENSITY_FACTOR;
 const MARGIN_LOWER_BOUND: f32 = TARGET_DENSITY * (1.0 - MARGIN);
+const MARGIN_LOWER_BOUND_INV: f32 = 1.0 / MARGIN_LOWER_BOUND;
 const MARGIN_UPPER_BOUND: f32 =
     TARGET_DENSITY + (DENSITY_UPPER_BOUND - TARGET_DENSITY) * MARGIN;
-const UPPER_RANGE: f32 = DENSITY_UPPER_BOUND - MARGIN_UPPER_BOUND;
-// We scale the density range to produce nice colours when transformed.
-const MAX_SIGMOID_INPUT: f32 = 3.0;
+const UPPER_DENSITY_RANGE: f32 = DENSITY_UPPER_BOUND - MARGIN_UPPER_BOUND;
+const UPPER_DENSITY_RANGE_INV: f32 = 1.0 / UPPER_DENSITY_RANGE;
 
 pub fn for_density<'a>(
     sample_point: Vec2,
@@ -46,33 +46,27 @@ pub fn for_density<'a>(
     }
     // Color point relative to target density.
     if density < MARGIN_LOWER_BOUND {
-        let density_error = MARGIN_LOWER_BOUND - density;
-        let error_scaled = density_error * MAX_SIGMOID_INPUT / MARGIN_LOWER_BOUND;
         lerp_color(
-            &COLOR_TARGET_PRESSURE,
             &COLOR_LOW_PRESSURE,
-            sigmoid(error_scaled),
+            &COLOR_TARGET_PRESSURE,
+            density * MARGIN_LOWER_BOUND_INV,
         )
     } else if density < MARGIN_UPPER_BOUND {
         Color::WHITE
     } else {
         let density_error = density - MARGIN_UPPER_BOUND;
-        let scaled_error = density_error * MAX_SIGMOID_INPUT / UPPER_RANGE;
         lerp_color(
             &COLOR_TARGET_PRESSURE,
             &COLOR_HIGH_PRESSURE,
-            sigmoid(scaled_error),
+            1.0_f32.min(density_error * UPPER_DENSITY_RANGE_INV),
         )
     }
 }
 
 pub fn for_velocity(v: f32) -> Color {
-    let color_factor = sigmoid(v);
-    Color::srgb(
-        lerp(PARTICLE_COLOR_SLOW.0, PARTICLE_COLOR_FAST.0, color_factor),
-        lerp(PARTICLE_COLOR_SLOW.1, PARTICLE_COLOR_FAST.1, color_factor),
-        lerp(PARTICLE_COLOR_SLOW.2, PARTICLE_COLOR_FAST.2, color_factor),
-    )
+    // Assume [0, 2] is a reasonable range for velocity values.
+    let color_factor = 1.0_f32.min(v * 0.5);
+    lerp_color(&PARTICLE_COLOR_SLOW, &PARTICLE_COLOR_FAST, color_factor)
 }
 
 fn lerp_color(a: &Srgba, b: &Srgba, t: f32) -> Color {

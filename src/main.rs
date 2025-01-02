@@ -26,7 +26,7 @@ use bevy::{
 };
 
 use background::Background;
-use consts::{BOX_LINE_WIDTH, BOX_SIZE, PIXEL_SIZE};
+use consts::{BOX_LINE_WIDTH, BOX_SIZE, PIXEL_SIZE, STARTUP_DAMPING};
 use consts_private::{BOX_LINE_CENTRE, BOX_SIZE_F, IMAGE_SIZE, WINDOW_SIZE_F};
 use physics::StartupDamping;
 use ui::*;
@@ -42,12 +42,12 @@ fn main() {
             ..Default::default()
         }).set(ImagePlugin::default_nearest()))
         .insert_resource(UILastUpdate(0.0))
-        .insert_resource(StartupDamping(0.0))
+        .insert_resource(StartupDamping(if STARTUP_DAMPING {0.0} else {1.0}))
         .insert_resource(AverageEK(0.0))
         .add_systems(Startup, (setup_scene, particle::spawn))
         .add_systems(Update, (
             (
-                physics::update_startup_damping,
+                physics::update_startup_damping.run_if(|| STARTUP_DAMPING),
                 particle::predict_positions,
                 particle::update_densities_and_pressures,
                 particle::update_accelerations,
@@ -147,7 +147,17 @@ fn setup_scene(
             ));
             parent.spawn((
                 TextSpan::default(),
-                font,
+                font.clone(),
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                TextSpan::from(", Damping: "),
+                font.clone(),
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                TextSpan::default(),
+                font.clone(),
                 TextColor(Color::WHITE),
             ));
         });

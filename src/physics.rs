@@ -1,20 +1,28 @@
 use bevy::prelude::*;
 use glam::f32::Vec2;
 
-use crate::consts::{COLLISION_DAMPING, DENSITY_KERNEL, PARTICLE_SCREEN_RADIUS, TARGET_DENSITY};
+use crate::consts::{
+    COLLISION_DAMPING,
+    DENSITY_KERNEL,
+    PARTICLE_SCREEN_RADIUS,
+    STARTUP_DAMPING_INTERVAL,
+    TARGET_DENSITY,
+};
 use crate::consts_private::{DENSITY_FACTOR, SCREEN_FACTOR};
 use crate::kernel::{self, Kernel};
-use crate::maths::sigmoid;
+use crate::maths::smooth_ramp;
 use crate::particle::PHYSICAL_HALF_SIZE;
 
 #[derive(Resource)]
 pub struct StartupDamping(pub f32);
 
+const INV_DAMPING_INTERVAL: f32 = 1.0 / STARTUP_DAMPING_INTERVAL;
+
 pub fn update_startup_damping(
     time: Res<Time>,
     mut damping: ResMut<StartupDamping>,
 ) {
-    damping.0 = sigmoid(0.25 * time.elapsed_secs());
+    damping.0 = smooth_ramp(time.elapsed_secs() * INV_DAMPING_INTERVAL);
 }
 
 pub fn density_to_pressure(density: f32, pressure_multiplier: f32) -> f32 {

@@ -38,8 +38,8 @@ pub fn spawn(
 
     for _ in 0..NUM_PARTICLES {
         let (x, y) = random::point_in_box((
-            PHYSICAL_HALF_SIZE.0,
-            PHYSICAL_HALF_SIZE.1,
+            PHYSICAL_HALF_SIZE.0 * 0.5,
+            PHYSICAL_HALF_SIZE.1 * 0.5,
         ));
 
         commands.spawn((

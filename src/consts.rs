@@ -25,6 +25,10 @@ pub const PARTICLE_SCREEN_RADIUS: f32 = 5.0;
 pub const COLLISION_DAMPING: f32 = 1.0;
 // Should particles be repelled from the edge of the box.
 pub const EDGE_REPULSION: bool = false;
+// Should we apply startup damping.
+pub const STARTUP_DAMPING: bool = true;
+// How long should we take to ramp up to full pressure in seconds.
+pub const STARTUP_DAMPING_INTERVAL: f32 = 2.0;
 // How strong should gravity be.
 pub const GRAVITY_FORCE: f32 = 0.0;
 // How far should particle influence go.
