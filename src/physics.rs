@@ -10,7 +10,7 @@ use crate::consts::{
 };
 use crate::consts_private::{DENSITY_FACTOR, SCREEN_FACTOR};
 use crate::kernel::{self, Kernel};
-use crate::maths::smooth_ramp;
+use crate::maths::{lerp, smooth_ramp};
 use crate::particle::PHYSICAL_HALF_SIZE;
 
 #[derive(Resource)]
@@ -160,12 +160,18 @@ fn boundary_check(
     high: f32,
 ) {
     if *new_x < low {
+        // Reflect both positions.
         *prev_x = 2.0 * low - *prev_x;
         *new_x = 2.0 * low - *new_x;
+        // Attenuate velocity and adjust prev_x.
+        *prev_x = lerp(*new_x, *prev_x, COLLISION_DAMPING);
         *v *= -COLLISION_DAMPING;
     } else if *new_x > high {
+        // Reflect both positions.
         *prev_x = 2.0 * high - *prev_x;
         *new_x = 2.0 * high - *new_x;
+        // Attenuate velocity and adjust prev_x.
+        *prev_x = lerp(*new_x, *prev_x, COLLISION_DAMPING);
         *v *= -COLLISION_DAMPING;
     }
 }

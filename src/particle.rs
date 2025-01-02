@@ -60,7 +60,6 @@ pub fn spawn(
 }
 
 pub fn predict_positions(
-    time: Res<Time>,
     mut particles: Query<(
         &PrevParticlePosition,
         &ParticlePosition,
@@ -69,7 +68,8 @@ pub fn predict_positions(
         &ParticleAcceleration,
     )>,
 ) {
-    let dt = time.delta_secs();
+    // Use a constant timestep for position prediction.
+    const DT: f32 = 1.0 / 60.0;
     for (
         PrevParticlePosition(prev_x),
         ParticlePosition(x),
@@ -82,7 +82,7 @@ pub fn predict_positions(
             x,
             v,
             a,
-            dt,
+            DT,
         );
         next_x.0 = res.x;
     }

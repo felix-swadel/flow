@@ -22,7 +22,7 @@ pub const PARTICLE_SCREEN_RADIUS: f32 = 5.0;
 
 // Physical constants.
 // How should the velocity be scaled on collision.
-pub const COLLISION_DAMPING: f32 = 1.0;
+pub const COLLISION_DAMPING: f32 = 0.5;
 // Should particles be repelled from the edge of the box.
 pub const EDGE_REPULSION: bool = false;
 // Should we apply startup damping.
@@ -30,7 +30,7 @@ pub const STARTUP_DAMPING: bool = true;
 // How long should we take to ramp up to full pressure in seconds.
 pub const STARTUP_DAMPING_INTERVAL: f32 = 2.0;
 // How strong should gravity be.
-pub const GRAVITY_FORCE: f32 = 0.0;
+pub const GRAVITY_FORCE: f32 = 10.0;
 // How far should particle influence go.
 pub const SMOOTHING_RADIUS: f32 = 1.2;
 // What is the ideal density.
