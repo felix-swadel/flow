@@ -2,7 +2,7 @@ use bevy::prelude::{Color, Srgba};
 use glam::f32::Vec2;
 
 use crate::const_color_u8;
-use crate::consts::{PARTICLE_MAX_INITIAL_V, TARGET_DENSITY};
+use crate::consts::{EDGE_REPULSION, PARTICLE_MAX_INITIAL_V, TARGET_DENSITY};
 use crate::consts_private::DENSITY_FACTOR;
 use crate::kernel;
 use crate::maths::*;
@@ -35,7 +35,11 @@ pub fn for_density<'a>(
     particles: impl Iterator<Item = &'a ParticlePosition>,
 ) -> Color {
     // Compute the density at this point.
-    let mut density = physics::compute_edge_density(&sample_point);
+    let mut density = if EDGE_REPULSION {
+        physics::compute_edge_density(&sample_point)
+    } else {
+        0.0
+    };
     for ParticlePosition(pos_i) in particles {
         let displacement_squared = (sample_point - pos_i).length_squared();
         density += kernel::spiky2(displacement_squared);

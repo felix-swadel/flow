@@ -74,7 +74,6 @@ pub fn grad_spiky2(displacement: Vec2) -> Vec2 {
         Vec2::ZERO
     } else {
         let distance = displacement.length();
-        println!("Grad spiky2; displacement: {}, distance: {}", displacement, distance);
         if distance < std::f32::EPSILON {
             // If we are at the centre of influence, pick a random direction.
             let dir = random::vec_within_disk(1.0);

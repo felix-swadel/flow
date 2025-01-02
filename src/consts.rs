@@ -1,6 +1,6 @@
 // Constants which the user might want to play with.
 
-use crate::{consts_private::DENSITY_FACTOR, kernel::Kernel};
+use crate::kernel::Kernel;
 
 // Window dimensions in screen space.
 pub const WINDOW_SIZE: (u32, u32) = (1600, 900);
@@ -15,23 +15,25 @@ pub const BOX_SIZE: (u32, u32) = (1200, 700);
 pub const BOX_LINE_WIDTH: f32 = 2.0;
 
 // The number of particles to spawn.
-pub const NUM_PARTICLES: usize = 150;
+pub const NUM_PARTICLES: usize = 200;
 // The radius of each particle on the screen.
-pub const PARTICLE_SCREEN_RADIUS: f32 = 7.5;
+pub const PARTICLE_SCREEN_RADIUS: f32 = 5.0;
 // The max initial velocity of particles on the screen.
-pub const PARTICLE_MAX_INITIAL_V: f32 = 0.001;
+pub const PARTICLE_MAX_INITIAL_V: f32 = 0.0025;
 
 
 // Physical constants.
 // How should the velocity be scaled on collision.
-pub const COLLISION_DAMPING: f32 = 0.9;
+pub const COLLISION_DAMPING: f32 = 1.0;
+// Should particles be repelled from the edge of the box.
+pub const EDGE_REPULSION: bool = false;
 // How strong should gravity be.
-pub const GRAVITY_FORCE: f32 = 5.0;
+pub const GRAVITY_FORCE: f32 = 0.0;
 // How far should particle influence go.
-pub const SMOOTHING_RADIUS: f32 = 1.0;
+pub const SMOOTHING_RADIUS: f32 = 1.2;
 // What is the ideal density.
-pub const TARGET_DENSITY: f32 = DENSITY_FACTOR;
+pub const TARGET_DENSITY: f32 = 2.75;
 // How strong should the pressure force be.
-pub const PRESSURE_MULTIPLIER: f32 = 10.0;
+pub const PRESSURE_MULTIPLIER: f32 = 15.0;
 // Which kernel to use to compute particle influence.
 pub const DENSITY_KERNEL: Kernel = Kernel::Spiky2;

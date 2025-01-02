@@ -28,6 +28,7 @@ use bevy::{
 use background::Background;
 use consts::{BOX_LINE_WIDTH, BOX_SIZE, PIXEL_SIZE};
 use consts_private::{BOX_LINE_CENTRE, BOX_SIZE_F, IMAGE_SIZE, WINDOW_SIZE_F};
+use physics::StartupDamping;
 use ui::*;
 
 fn main() {
@@ -40,19 +41,21 @@ fn main() {
             }),
             ..Default::default()
         }).set(ImagePlugin::default_nearest()))
-        .insert_resource(FrameRateLastUpdate(0.0))
+        .insert_resource(UILastUpdate(0.0))
+        .insert_resource(StartupDamping(0.0))
+        .insert_resource(AverageEK(0.0))
         .add_systems(Startup, (setup_scene, particle::spawn))
         .add_systems(Update, (
             (
+                physics::update_startup_damping,
                 particle::update_densities_and_pressures,
                 particle::update_accelerations,
-                particle::update_positions,
-                particle::update_velocities,
+                particle::verlet_integrate,
                 particle::update_colors,
                 background::update,
             ).chain(),
             interaction::keypress.run_if(input_just_pressed(KeyCode::Space)),
-            ui::update_frame_rate,
+            ui::update,
         ))
         .run();
 }
@@ -113,15 +116,16 @@ fn setup_scene(
     ));
 
     // Set up frame rate text.
+    let font = TextFont {
+        font_size: FRAME_RATE_FONT_SIZE,
+        ..default()
+    };
     commands
         .spawn((
             Text::new("FrameRate: "),
-            TextFont {
-                font_size: FRAME_RATE_FONT_SIZE,
-                ..default()
-            },
+            font.clone(),
             TextColor(Color::WHITE),
-            FrameRateUI,
+            UI,
             Node {
                 position_type: PositionType::Absolute,
                 top: FRAME_RATE_TEXT_PADDING,
@@ -129,14 +133,23 @@ fn setup_scene(
                 ..default()
             },
         ))
-        .with_child((
-            TextSpan::default(),
-            TextFont {
-                font_size: FRAME_RATE_FONT_SIZE,
-                ..default()
-            },
-            TextColor(Color::WHITE),
-        ));
+        .with_children(|parent| {
+            parent.spawn((
+                TextSpan::default(),
+                font.clone(),
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                TextSpan::from(", Average EK: "),
+                font.clone(),
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                TextSpan::default(),
+                font,
+                TextColor(Color::WHITE),
+            ));
+        });
 
     // Set up background image texture.
     let mut image = Image::new_fill(
