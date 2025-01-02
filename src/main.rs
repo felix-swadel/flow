@@ -48,9 +48,10 @@ fn main() {
         .add_systems(Update, (
             (
                 physics::update_startup_damping,
+                particle::predict_positions,
                 particle::update_densities_and_pressures,
                 particle::update_accelerations,
-                particle::verlet_integrate,
+                particle::update_positions,
                 particle::update_colors,
                 background::update,
             ).chain(),

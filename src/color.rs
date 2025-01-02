@@ -2,7 +2,7 @@ use bevy::prelude::{Color, Srgba};
 use glam::f32::Vec2;
 
 use crate::const_color_u8;
-use crate::consts::{EDGE_REPULSION, PARTICLE_MAX_INITIAL_V, TARGET_DENSITY};
+use crate::consts::{EDGE_REPULSION, TARGET_DENSITY};
 use crate::consts_private::DENSITY_FACTOR;
 use crate::kernel;
 use crate::maths::*;
@@ -66,11 +66,8 @@ pub fn for_density<'a>(
     }
 }
 
-// Factor to scale the velocity into a nice color range.
-pub const PARTICLE_COLOR_FACTOR: f32 = 2.0 / PARTICLE_MAX_INITIAL_V;
-
 pub fn for_velocity(v: f32) -> Color {
-    let color_factor = sigmoid(v * PARTICLE_COLOR_FACTOR);
+    let color_factor = sigmoid(v);
     Color::srgb(
         lerp(PARTICLE_COLOR_SLOW.0, PARTICLE_COLOR_FAST.0, color_factor),
         lerp(PARTICLE_COLOR_SLOW.1, PARTICLE_COLOR_FAST.1, color_factor),
