@@ -9,7 +9,6 @@ use crate::consts::{
     TARGET_DENSITY,
 };
 use crate::consts_private::{DENSITY_FACTOR, SCREEN_FACTOR};
-use crate::kernel::{self, Kernel};
 use crate::maths::{lerp, smooth_ramp};
 use crate::particle::PHYSICAL_HALF_SIZE;
 
@@ -42,14 +41,9 @@ pub fn compute_edge_density(sample_point: &Vec2) -> f32 {
         edge_displacement.0 * edge_displacement.0,
         edge_displacement.1 * edge_displacement.1,
     );
-    let edge_density = match DENSITY_KERNEL {
-        Kernel::Smooth6 =>
-            kernel::smooth6(displacement_squared.0) +
-            kernel::smooth6(displacement_squared.1),
-        Kernel::Spiky2 =>
-            kernel::spiky2(displacement_squared.0) +
-            kernel::spiky2(displacement_squared.1),
-    };
+    let edge_density =
+        DENSITY_KERNEL.influence(displacement_squared.0) +
+        DENSITY_KERNEL.influence(displacement_squared.1);
     edge_density * EDGE_DENSITY_FACTOR
 }
 
@@ -69,20 +63,10 @@ pub fn compute_edge_acceleration(
         },
     );
     let edge_pressure = density_to_pressure(EDGE_DENSITY, pressure_multiplier);
-    let acc = match DENSITY_KERNEL {
-        Kernel::Smooth6 => {
-            edge_pressure * (
-                kernel::grad_smooth6(Vec2 {x: edge_displacement.0, y: 0.0}) +
-                kernel::grad_smooth6(Vec2 {x: 0.0, y: edge_displacement.1})
-            ) / EDGE_DENSITY
-        },
-        Kernel::Spiky2 => {
-            edge_pressure * (
-                kernel::grad_spiky2(Vec2 {x: edge_displacement.0, y: 0.0}) +
-                kernel::grad_spiky2(Vec2 {x: 0.0, y: edge_displacement.1})
-            ) / EDGE_DENSITY
-        },
-    };
+    let acc = edge_pressure * (
+        DENSITY_KERNEL.gradient(Vec2 {x: edge_displacement.0, y: 0.0}) +
+        DENSITY_KERNEL.gradient(Vec2 {x: 0.0, y: edge_displacement.1})
+    ) / EDGE_DENSITY;
     acc / sample_density
 }
 

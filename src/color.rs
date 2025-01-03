@@ -2,9 +2,8 @@ use bevy::prelude::{Color, Srgba};
 use glam::f32::Vec2;
 
 use crate::const_srgba_u8;
-use crate::consts::{EDGE_REPULSION, TARGET_DENSITY};
+use crate::consts::{DENSITY_KERNEL, EDGE_REPULSION, TARGET_DENSITY};
 use crate::consts_private::DENSITY_FACTOR;
-use crate::kernel;
 use crate::maths::*;
 use crate::particle::ParticlePosition;
 use crate::physics;
@@ -42,7 +41,7 @@ pub fn for_density<'a>(
     };
     for ParticlePosition(pos_i) in particles {
         let displacement_squared = (sample_point - pos_i).length_squared();
-        density += kernel::spiky2(displacement_squared);
+        density += DENSITY_KERNEL.influence(displacement_squared);
     }
     // Color point relative to target density.
     if density < MARGIN_LOWER_BOUND {

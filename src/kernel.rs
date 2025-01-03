@@ -9,22 +9,36 @@ pub enum Kernel {
     Spiky2,
 }
 
+impl Kernel {
+    pub fn influence(self, displacement_squared: f32) -> f32 {
+        match self {
+            Kernel::Smooth6 => smooth6(displacement_squared),
+            Kernel::Spiky2 => spiky2(displacement_squared),
+        }
+    }
+
+    pub fn gradient(self, displacement: Vec2) -> Vec2 {
+        match self {
+            Kernel::Smooth6 => grad_smooth6(displacement),
+            Kernel::Spiky2 => grad_spiky2(displacement),
+        }
+    }
+}
+
 const SMOOTHING_RADIUS_INV: f32 = 1.0 / SMOOTHING_RADIUS;
 const SMOOTHING_RADIUS_2: f32 = SMOOTHING_RADIUS * SMOOTHING_RADIUS;
 #[allow(dead_code)]
 const SMOOTHING_RADIUS_2_INV: f32 = 1.0 / SMOOTHING_RADIUS_2;
 
 // Constants for smooth6 kernel.
-#[allow(dead_code)]
 pub const SMOOTH6_FACTOR: f32 =
     4.0 / (std::f32::consts::PI * SMOOTHING_RADIUS_2);
-    #[allow(dead_code)]
-pub const SMOOTH6_GRAD_FACTOR: f32 = 24.0 / (
+const SMOOTH6_GRAD_FACTOR: f32 = 24.0 / (
     std::f32::consts::PI * SMOOTHING_RADIUS_2 * SMOOTHING_RADIUS_2
 );
 
 #[allow(dead_code)]
-pub fn smooth6(displacement_squared: f32) -> f32 {
+fn smooth6(displacement_squared: f32) -> f32 {
     if displacement_squared > SMOOTHING_RADIUS_2 {
         0.0
     } else {
@@ -33,8 +47,7 @@ pub fn smooth6(displacement_squared: f32) -> f32 {
     }
 }
 
-#[allow(dead_code)]
-pub fn grad_smooth6(displacement: Vec2) -> Vec2 {
+fn grad_smooth6(displacement: Vec2) -> Vec2 {
     let mag_2 = displacement.length_squared();
     if mag_2 > SMOOTHING_RADIUS_2 {
         Vec2::ZERO
@@ -50,15 +63,12 @@ pub fn grad_smooth6(displacement: Vec2) -> Vec2 {
 }
 
 // Constants for spiky2 kernel.
-#[allow(dead_code)]
 pub const SPIKY2_FACTOR: f32 = 6.0 / (std::f32::consts::PI * SMOOTHING_RADIUS_2);
-#[allow(dead_code)]
-pub const SPIKY2_GRAD_FACTOR: f32 = 12.0 / (
+const SPIKY2_GRAD_FACTOR: f32 = 12.0 / (
     std::f32::consts::PI * SMOOTHING_RADIUS_2 * SMOOTHING_RADIUS
 );
 
-#[allow(dead_code)]
-pub fn spiky2(displacement_squared: f32) -> f32 {
+fn spiky2(displacement_squared: f32) -> f32 {
     if displacement_squared > SMOOTHING_RADIUS_2 {
         0.0
     } else {
@@ -68,8 +78,7 @@ pub fn spiky2(displacement_squared: f32) -> f32 {
     }
 }
 
-#[allow(dead_code)]
-pub fn grad_spiky2(displacement: Vec2) -> Vec2 {
+fn grad_spiky2(displacement: Vec2) -> Vec2 {
     if displacement.length_squared() > SMOOTHING_RADIUS_2 {
         Vec2::ZERO
     } else {

@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use crate::color;
 use crate::consts::*;
 use crate::consts_private::*;
-use crate::kernel::{self, Kernel};
 use crate::physics::{self, StartupDamping};
 use crate::random;
 use crate::AverageEK;
@@ -118,10 +117,7 @@ pub fn update_densities_and_pressures(
                 continue;
             }
             let displacement_squared = (pred_pos - pos).length_squared();
-            sum += match DENSITY_KERNEL {
-                Kernel::Smooth6 => kernel::smooth6(displacement_squared),
-                Kernel::Spiky2 => kernel::spiky2(displacement_squared),
-            }
+            sum += DENSITY_KERNEL.influence(displacement_squared);
         }
         // Finally, add the density contribution of the particle itself.
         density.0 = sum + DENSITY_FACTOR;
@@ -134,7 +130,11 @@ pub fn update_densities_and_pressures(
 pub fn update_accelerations(
     mut accelerations: Query<(Entity, &mut ParticleAcceleration)>,
     particles: Query<(
-        Entity, &PredictedParticlePosition, &ParticlePressure, &ParticleDensity,
+        Entity,
+        &PredictedParticlePosition,
+        &ParticleVelocity,
+        &ParticlePressure,
+        &ParticleDensity,
     )>,
     damping: Res<StartupDamping>,
 ) {
@@ -144,40 +144,47 @@ pub fn update_accelerations(
         let (
             _,
             PredictedParticlePosition(pos_x),
+            ParticleVelocity(vel_x),
             ParticlePressure(pressure_x),
             ParticleDensity(density_x),
         ) = particles.get(entity).unwrap();
-        // Start with any acceleration from the edge of the box.
-        let mut acc = if EDGE_REPULSION {
-            physics::compute_edge_acceleration(
-                &pos_x,
-                *density_x,
-                damping.0 * PRESSURE_MULTIPLIER,
-            )
-        } else {
-            Vec2::ZERO
-        };
 
+        let mut pressure_gradient = Vec2::ZERO;
+        let mut viscosity_force = Vec2::ZERO;
         // Sum the acceleration contributions of all particles on that position.
         for (
             other_entity,
             PredictedParticlePosition(pos_i),
+            ParticleVelocity(vel_i),
             ParticlePressure(pressure_i),
             ParticleDensity(density_i),
         ) in particles.iter() {
             if other_entity == entity {
                 continue;
             }
+            let displacement = pos_x - pos_i;
 
+            // Compute pressure gradient contribution.
             let shared_pressure = 0.5 * (pressure_x + pressure_i);
-            acc += shared_pressure * match DENSITY_KERNEL {
-                Kernel::Smooth6 => kernel::grad_smooth6(pos_x - pos_i),
-                Kernel::Spiky2 => kernel::grad_spiky2(pos_x - pos_i),
-            } / density_i;
+            pressure_gradient += shared_pressure * DENSITY_KERNEL.gradient(displacement) / density_i;
+
+            // Compute viscosity contribution.
+            viscosity_force +=
+                (vel_i - vel_x) * VISCOSITY_KERNEL.influence(displacement.length_squared());
         }
-        // Update acceleration. Damp it initially to prevent large values.
-        acceleration.0 = acc * damping.0;
-        acceleration.0.y -= GRAVITY_FORCE;
+
+        // Compute acceleration.
+        let mut acc = damping.0 * pressure_gradient / density_x + viscosity_force * VISCOSITY;
+        if EDGE_REPULSION {
+            acc += physics::compute_edge_acceleration(
+                &pos_x,
+                *density_x,
+                damping.0 * PRESSURE_MULTIPLIER,
+            );
+        }
+        acc.y -= GRAVITY_FORCE;
+
+        acceleration.0 = acc;
     }
 }
 

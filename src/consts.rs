@@ -15,7 +15,7 @@ pub const BOX_SIZE: (u32, u32) = (1200, 700);
 pub const BOX_LINE_WIDTH: f32 = 2.0;
 
 // The number of particles to spawn.
-pub const NUM_PARTICLES: usize = 200;
+pub const NUM_PARTICLES: usize = 400;
 // The radius of each particle on the screen.
 pub const PARTICLE_SCREEN_RADIUS: f32 = 5.0;
 
@@ -26,7 +26,7 @@ pub const COLLISION_DAMPING: f32 = 0.5;
 // Should particles be repelled from the edge of the box.
 pub const EDGE_REPULSION: bool = false;
 // Should we apply startup damping.
-pub const STARTUP_DAMPING: bool = true;
+pub const STARTUP_DAMPING: bool = false;
 // How long should we take to ramp up to full pressure in seconds.
 pub const STARTUP_DAMPING_INTERVAL: f32 = 2.0;
 // How strong should gravity be.
@@ -39,3 +39,7 @@ pub const TARGET_DENSITY: f32 = 2.75;
 pub const PRESSURE_MULTIPLIER: f32 = 65.0;
 // Which kernel to use to compute particle influence.
 pub const DENSITY_KERNEL: Kernel = Kernel::Spiky2;
+// How viscous is the fluid.
+pub const VISCOSITY: f32 = 0.1;
+// How should viscous particles influence each other.
+pub const VISCOSITY_KERNEL: Kernel = Kernel::Smooth6;
